@@ -1,0 +1,56 @@
+.root {
+    -fx-font-family: "Avenir Next";
+    -fx-font-smoothing-type: lcd;
+    -fx-background-color: #F7F6F2;
+    -fx-text-fill: #181818;
+}
+
+.app-shell,
+.shell-content,
+.screen-scroll,
+.screen-scroll > .viewport,
+.empty-screen-content {
+    -fx-background-color: #F7F6F2;
+}
+
+.label {
+    -fx-text-fill: #181818;
+}
+
+.button {
+    -fx-font-family: "Avenir Next";
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+
+.text-field {
+    -fx-font-family: "Avenir Next";
+    -fx-font-size: 14px;
+    -fx-text-fill: #181818;
+    -fx-prompt-text-fill: #8A8B87;
+}
+
+.scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-padding: 3 2 3 0;
+}
+
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-padding: 0 4 2 4;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #C7C6C1;
+    -fx-background-radius: 8;
+}
+
+.scroll-bar .track,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button,
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}

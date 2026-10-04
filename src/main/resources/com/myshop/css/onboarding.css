@@ -1,0 +1,155 @@
+.onboarding-view,
+.onboarding-content {
+    -fx-background-color: #F7F6F2;
+}
+
+.onboarding-header {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E7E5E1;
+    -fx-border-width: 0 0 1 0;
+}
+
+.onboarding-brand {
+    -fx-font-size: 23px;
+    -fx-font-weight: 800;
+    -fx-letter-spacing: -0.6px;
+}
+
+.onboarding-user-label,
+.onboarding-kicker,
+.onboarding-step-label,
+.onboarding-hint {
+    -fx-font-size: 13px;
+    -fx-text-fill: #737373;
+}
+
+.onboarding-user-label {
+    -fx-font-weight: 600;
+}
+
+.onboarding-card {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 16;
+    -fx-border-color: #E7E5E1;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(24, 24, 24, 0.07), 22, 0.14, 0, 5);
+}
+
+.onboarding-progress {
+    -fx-accent: #1F4D3B;
+    -fx-background-color: #E8F0EB;
+    -fx-background-radius: 99;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.onboarding-progress > .bar {
+    -fx-background-color: #1F4D3B;
+    -fx-background-radius: 99;
+    -fx-padding: 0;
+}
+
+.onboarding-progress > .track {
+    -fx-background-color: #E8F0EB;
+    -fx-background-radius: 99;
+    -fx-padding: 0;
+}
+
+.onboarding-title {
+    -fx-font-size: 29px;
+    -fx-font-weight: 700;
+    -fx-letter-spacing: -0.6px;
+    -fx-text-fill: #181818;
+}
+
+.onboarding-supporting {
+    -fx-font-size: 14px;
+    -fx-text-fill: #737373;
+}
+
+.preference-grid {
+    -fx-padding: 7 0 0 0;
+}
+
+.category-card.preference-selected {
+    -fx-background-color: #E8F0EB;
+    -fx-border-color: #6E9A83;
+    -fx-effect: dropshadow(gaussian, rgba(31, 77, 59, 0.12), 14, 0.15, 0, 3);
+}
+
+.category-card.preference-selected:hover {
+    -fx-background-color: #E2EEE6;
+}
+
+.preference-toggle-grid,
+.preference-style-grid {
+    -fx-padding: 8 0 0 0;
+}
+
+.preference-toggle,
+.preference-style-toggle {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 10;
+    -fx-border-color: #DCDAD4;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 13 17;
+    -fx-text-fill: #3F403E;
+}
+
+.preference-toggle {
+    -fx-min-width: 126px;
+}
+
+.preference-style-toggle {
+    -fx-min-width: 145px;
+}
+
+.preference-toggle:hover,
+.preference-style-toggle:hover {
+    -fx-border-color: #9FBAAA;
+    -fx-background-color: #FBFCF9;
+}
+
+.preference-toggle:selected,
+.preference-style-toggle:selected {
+    -fx-background-color: #E8F0EB;
+    -fx-border-color: #6E9A83;
+    -fx-text-fill: #1F4D3B;
+}
+
+.preference-toggle:focused,
+.preference-style-toggle:focused {
+    -fx-border-color: #6E9A83;
+}
+
+.onboarding-field {
+    -fx-padding: 10 0 0 0;
+}
+
+.onboarding-field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #3F403E;
+}
+
+.onboarding-input {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 9;
+    -fx-border-color: #DCDAD4;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 11 12;
+    -fx-pref-height: 42px;
+}
+
+.onboarding-input:focused {
+    -fx-border-color: #6E9A83;
+    -fx-effect: dropshadow(gaussian, rgba(31, 77, 59, 0.10), 10, 0.16, 0, 2);
+}
+
+.onboarding-error {
+    -fx-font-size: 12px;
+    -fx-text-fill: #A6533E;
+}

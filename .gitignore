@@ -1,0 +1,39 @@
+# Maven build output
+target/
+
+# macOS
+.DS_Store
+
+# IDE metadata
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.swp
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+
+# Runtime-generated files
+runtime/
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
