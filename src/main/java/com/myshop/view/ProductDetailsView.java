@@ -72,6 +72,18 @@ public final class ProductDetailsView extends ScrollPane {
             Button compare = new Button("Compare"); compare.setMnemonicParsing(false); compare.getStyleClass().add("secondary-button");
             compare.setOnAction(event -> compareAction.run()); actions.getChildren().add(compare);
         }
+        String externalUrl = externalUrl(product);
+        if (externalUrl != null) {
+            Button viewProduct = new Button("View product");
+            viewProduct.setMnemonicParsing(false);
+            viewProduct.getStyleClass().add("primary-button");
+            viewProduct.setOnAction(event -> {
+                if (ExternalLinkService.open(externalUrl) != ExternalLinkService.Result.OPENED) {
+                    viewProduct.setText("Link unavailable");
+                }
+            });
+            actions.getChildren().add(0, viewProduct);
+        }
         if (!actions.getChildren().isEmpty()) copy.getChildren().add(actions);
 
         HBox productPanel = new HBox(artwork, copy); productPanel.setAlignment(Pos.TOP_LEFT); productPanel.setSpacing(46);
@@ -102,7 +114,7 @@ public final class ProductDetailsView extends ScrollPane {
         offers.forEach(offer -> {
             HBox row = new HBox(); row.setAlignment(Pos.CENTER_LEFT); row.setSpacing(14); row.getStyleClass().add("offer-row");
             Label store = new Label(offer.storeName()); store.getStyleClass().add("offer-store");
-            Label price = new Label(offer.price().toPlainString() + " " + offer.currency()); price.getStyleClass().add("offer-price");
+            Label price = new Label(formatOfferPrice(offer)); price.getStyleClass().add("offer-price");
             VBox meta = new VBox(store, price); meta.setSpacing(3); HBox.setHgrow(meta, Priority.ALWAYS); row.getChildren().add(meta);
             if (offer.delivery() != null) { Label delivery = new Label(offer.delivery()); delivery.getStyleClass().add("detail-muted"); row.getChildren().add(delivery); }
             if (ExternalLinkService.isSafe(offer.productUrl())) {
@@ -123,4 +135,22 @@ public final class ProductDetailsView extends ScrollPane {
 
     private boolean hasRating(Product product) { return Double.isFinite(product.rating()) && product.rating() > 0; }
     private boolean hasText(String value) { return value != null && !value.isBlank(); }
+
+    private String formatOfferPrice(ProductOffer offer) {
+        String amount = offer.price().stripTrailingZeros().toPlainString();
+        return "INR".equalsIgnoreCase(offer.currency())
+                ? "₹" + amount
+                : amount + (hasText(offer.currency()) ? " " + offer.currency() : "");
+    }
+
+    private String externalUrl(Product product) {
+        if (ExternalLinkService.isSafe(product.externalUrl())) {
+            return product.externalUrl();
+        }
+        return product.offers().stream()
+                .map(ProductOffer::productUrl)
+                .filter(ExternalLinkService::isSafe)
+                .findFirst()
+                .orElse(null);
+    }
 }

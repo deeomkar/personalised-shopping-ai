@@ -321,7 +321,7 @@ public final class RecommendationService {
         NumberFormat format = NumberFormat.getIntegerInstance(Locale.ROOT);
         format.setGroupingUsed(true);
         String symbol = query != null && (query.contains("₹") || query.toLowerCase(Locale.ROOT).contains("inr"))
-                ? "₹" : query != null && query.contains("$") ? "$" : "";
+                ? "₹" : "";
         return symbol + format.format(value);
     }
 

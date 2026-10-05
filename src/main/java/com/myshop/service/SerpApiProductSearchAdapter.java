@@ -294,7 +294,8 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
                 imageUrl,
                 text(item, "snippet"),
                 false,
-                offers
+                offers,
+                productUrl
         );
         return new MappedProduct(product, price, currency);
     }

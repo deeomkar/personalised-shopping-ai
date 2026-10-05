@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ProductOfferTest {
@@ -42,6 +43,18 @@ class ProductOfferTest {
         );
 
         assertEquals(List.of(offer), product.offers());
+        assertEquals("https://example.invalid/products/sku-1", product.externalUrl());
         assertThrows(UnsupportedOperationException.class, () -> product.offers().add(offer));
+    }
+
+    @Test
+    void keepsOnlyValidExternalProductUrls() {
+        Product product = new Product(
+                "product-2", "Example", "Example Product", "Electronics",
+                "₹10", null, null, 4.0, 1, "Example Store", null, null, null, null,
+                false, List.of(), "javascript:alert(1)"
+        );
+
+        assertNull(product.externalUrl());
     }
 }

@@ -207,7 +207,8 @@ public final class DataForSeoProductSearchAdapter implements LiveProductSearchAd
                 imageUrl,
                 text(node, "description"),
                 false,
-                offers
+                offers,
+                productUrl
         );
     }
 

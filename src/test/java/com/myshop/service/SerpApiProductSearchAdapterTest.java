@@ -64,6 +64,7 @@ class SerpApiProductSearchAdapterTest {
         assertEquals(218, product.reviewCount());
         assertEquals("Campus Store", product.store());
         assertEquals("https://images.example/sneakers.webp", product.imageUrl());
+        assertEquals("https://store.example/sneakers", product.externalUrl());
         assertEquals(new BigDecimal("3499"), offer.price());
         assertEquals("INR", offer.currency());
         assertEquals("https://store.example/sneakers", offer.productUrl());
@@ -103,6 +104,29 @@ class SerpApiProductSearchAdapterTest {
 
         assertEquals(List.of("unknown"), products.stream().map(Product::id).toList());
         assertTrue(products.getFirst().offers().isEmpty());
+    }
+
+    @Test
+    void preservesProductLinkWhenMerchantLinkIsMissing() {
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
+                {"shopping_results":[{
+                  "title":"White sneakers",
+                  "product_id":"product-link-only",
+                  "price":"₹1,999",
+                  "extracted_price":1999,
+                  "currency":"INR",
+                  "source":"Shopping result",
+                  "product_link":"https://www.google.com/shopping/product/2",
+                  "thumbnail":"https://images.example/product-link-only.webp"
+                }]}
+                """));
+
+        Product product = new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper())
+                .search(request(5000)).getFirst();
+
+        assertEquals("https://www.google.com/shopping/product/2", product.externalUrl());
+        assertEquals("https://www.google.com/shopping/product/2", product.offers().getFirst().productUrl());
+        assertEquals("https://images.example/product-link-only.webp", product.imageUrl());
     }
 
     @Test

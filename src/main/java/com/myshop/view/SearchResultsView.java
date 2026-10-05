@@ -127,7 +127,7 @@ public final class SearchResultsView extends ScrollPane {
         queryField.input().setText(displayQuery(request));
         Button searchButton = new Button("Search");
         searchButton.setMnemonicParsing(false);
-        searchButton.getStyleClass().add("primary-button");
+        searchButton.getStyleClass().addAll("primary-button", "search-submit");
         queryField.setOnAction(event -> submitQuery());
         searchButton.setOnAction(event -> submitQuery());
         HBox searchRow = new HBox(queryField, searchButton);
@@ -321,7 +321,8 @@ public final class SearchResultsView extends ScrollPane {
         if (product.saved() == saved) return product;
         return new Product(product.id(), product.brand(), product.name(), product.category(), product.price(),
                 product.originalPrice(), product.discount(), product.rating(), product.reviewCount(), product.store(),
-                product.artwork(), product.artworkClass(), product.imageUrl(), product.description(), saved, product.offers());
+                product.artwork(), product.artworkClass(), product.imageUrl(), product.description(), saved,
+                product.offers(), product.externalUrl());
     }
 
     private Map<String, Recommendation> currentRecommendations() {

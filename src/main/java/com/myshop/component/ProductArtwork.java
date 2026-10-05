@@ -1,8 +1,6 @@
 package com.myshop.component;
 
 import com.myshop.model.Product;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
@@ -31,14 +29,7 @@ public final class ProductArtwork extends StackPane {
             getChildren().add(icon);
         }
 
-        if (imageUrl == null || imageUrl.isBlank()) {
-            Label synthetic = new Label("MOCK PREVIEW");
-            synthetic.getStyleClass().add("artwork-caption");
-            StackPane.setAlignment(synthetic, Pos.BOTTOM_LEFT);
-            getChildren().add(synthetic);
-        }
-
-        setAlignment(Pos.CENTER);
+        setAlignment(javafx.geometry.Pos.CENTER);
         setMinHeight(height);
         setPrefHeight(height);
         setMaxHeight(height);
