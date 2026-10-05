@@ -15,7 +15,8 @@ public record ShoppingIntent(
         List<String> useCases,
         List<String> priorities,
         List<String> keywords,
-        String shoppingStyle
+        String shoppingStyle,
+        String qualityPreference
 ) {
     public ShoppingIntent {
         rawQuery = normalize(rawQuery);
@@ -32,6 +33,7 @@ public record ShoppingIntent(
         priorities = immutableList(priorities);
         keywords = immutableList(keywords);
         shoppingStyle = normalizeNullable(shoppingStyle);
+        qualityPreference = normalizeNullable(qualityPreference);
     }
 
     public ShoppingIntent(String rawQuery, String category, String productType,
@@ -42,9 +44,17 @@ public record ShoppingIntent(
                 colors, useCases, priorities, keywords, null);
     }
 
+    public ShoppingIntent(String rawQuery, String category, String productType,
+                          Double minBudget, Double maxBudget, List<String> preferredBrands,
+                          List<String> colors, List<String> useCases, List<String> priorities,
+                          List<String> keywords, String shoppingStyle) {
+        this(rawQuery, category, productType, minBudget, maxBudget, preferredBrands,
+                colors, useCases, priorities, keywords, shoppingStyle, null);
+    }
+
     public static ShoppingIntent empty(String rawQuery) {
         return new ShoppingIntent(rawQuery, null, null, null, null,
-                List.of(), List.of(), List.of(), List.of(), List.of(), null);
+                List.of(), List.of(), List.of(), List.of(), List.of(), null, null);
     }
 
     private static Double validBudget(Double value, String name) {

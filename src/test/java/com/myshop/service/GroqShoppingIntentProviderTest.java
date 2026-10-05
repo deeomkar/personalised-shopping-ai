@@ -159,6 +159,7 @@ class GroqShoppingIntentProviderTest {
         intent.putArray("priorities").add("comfort").add("minimal style");
         intent.putArray("keywords").add("white sneakers").add("comfortable").add("minimal");
         intent.putNull("shoppingStyle");
+        intent.putNull("qualityPreference");
         var response = mapper.createObjectNode();
         response.putArray("choices").addObject().putObject("message")
                 .put("content", intent.toString());

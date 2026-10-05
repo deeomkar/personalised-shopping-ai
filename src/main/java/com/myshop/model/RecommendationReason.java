@@ -21,6 +21,7 @@ public record RecommendationReason(Type type, String text) {
         BRAND_MATCH,
         USE_CASE,
         PRIORITY,
+        QUALITY,
         PREFERENCE_CATEGORY,
         FAVORITE_BRAND,
         RATING

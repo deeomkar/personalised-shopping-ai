@@ -61,6 +61,20 @@ class ShoppingIntentServiceTest {
     }
 
     @Test
+    void fallbackUnderstandsNaturalBeautyIntentAndKBudget() {
+        ShoppingIntent intent = new FallbackShoppingIntentProvider().understand(request(
+                "moisturizer my skin is dry so I need moisturizer best under 1k and it should be good brands"
+        ));
+
+        assertEquals("Beauty", intent.category());
+        assertEquals("moisturizer", intent.productType());
+        assertEquals(1000D, intent.maxBudget());
+        assertTrue(intent.useCases().contains("dry skin"));
+        assertEquals("reputable-brands", intent.qualityPreference());
+        assertTrue(intent.priorities().contains("best"));
+    }
+
+    @Test
     void missingGeminiKeyUsesFallbackProvider() {
         ShoppingIntent expected = ShoppingIntent.empty("headphones");
         ShoppingIntentProvider fallback = request -> expected;

@@ -56,7 +56,33 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
         if (!config.isConfigured()) {
             throw new IllegalStateException("SERPAPI_API_KEY is not configured");
         }
-        URI requestUri = buildUri(request);
+        URI requestUri = buildUri(request, buildKeyword(request));
+        List<Product> products = searchOnce(request, requestUri);
+        if (needsFallbackQuery(products, request)) {
+            String fallbackKeyword = fallbackKeyword(request);
+            if (!fallbackKeyword.isBlank() && !fallbackKeyword.equalsIgnoreCase(buildKeyword(request))) {
+                products = searchOnce(request, buildUri(request, fallbackKeyword));
+            }
+        }
+        return products;
+    }
+
+    private boolean needsFallbackQuery(List<Product> products, SearchRequest request) {
+        if (products.isEmpty()) {
+            return true;
+        }
+        ShoppingIntent intent = request.shoppingIntent();
+        if (intent == null || intent.productType() == null || intent.productType().isBlank()) {
+            return false;
+        }
+        String productType = intent.productType().toLowerCase(Locale.ROOT);
+        return products.stream().noneMatch(product ->
+                (product.name() != null && product.name().toLowerCase(Locale.ROOT).contains(productType))
+                        || (product.category() != null
+                        && product.category().toLowerCase(Locale.ROOT).contains(productType)));
+    }
+
+    private List<Product> searchOnce(SearchRequest request, URI requestUri) {
         SerpApiHttpResponse response = transport.get(requestUri, config.requestTimeout());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             SerpApiDiagnostics diagnostics = diagnostics(
@@ -199,10 +225,10 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
         return sanitized.length() > 1000 ? sanitized.substring(0, 1000) + "…" : sanitized;
     }
 
-    private URI buildUri(SearchRequest request) {
+    private URI buildUri(SearchRequest request, String keyword) {
         List<String> parameters = new ArrayList<>();
         add(parameters, "engine", "google_shopping");
-        add(parameters, "q", buildKeyword(request));
+        add(parameters, "q", keyword);
         add(parameters, "api_key", config.apiKey());
         add(parameters, "gl", config.country());
         add(parameters, "hl", config.language());
@@ -330,20 +356,47 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
     }
 
     private String buildKeyword(SearchRequest request) {
-        if (!request.rawQuery().isBlank()) {
-            return request.rawQuery();
-        }
         ShoppingIntent intent = request.shoppingIntent();
-        if (intent == null) {
-            return request.category() == null || request.category().isBlank()
-                    ? "shopping products" : request.category();
+        if (intent != null) {
+            List<String> terms = new ArrayList<>();
+            addDistinctTerms(terms, intent.productType(), 1);
+            addDistinctTerms(terms, intent.useCases(), 2);
+            addDistinctTerms(terms, intent.colors(), 2);
+            addDistinctTerms(terms, intent.priorities(), 1);
+            if (terms.isEmpty()) {
+                addDistinctTerms(terms, intent.category(), 1);
+            }
+            if (terms.isEmpty()) {
+                addDistinctTerms(terms, intent.keywords(), 3);
+            }
+            if (!terms.isEmpty()) {
+                return String.join(" ", terms);
+            }
         }
-        List<String> terms = new ArrayList<>();
-        addTerms(terms, intent.colors(), 2);
-        addTerms(terms, intent.productType(), 1);
-        addTerms(terms, intent.category(), 1);
-        addTerms(terms, intent.useCases(), 1);
-        return terms.isEmpty() ? "shopping products" : String.join(" ", terms);
+        if (request.category() != null && !request.category().isBlank()) {
+            return request.category();
+        }
+        List<String> concise = conciseTerms(request.rawQuery());
+        return concise.isEmpty() ? "shopping products" : String.join(" ", concise);
+    }
+
+    String searchKeyword(SearchRequest request) {
+        return buildKeyword(request);
+    }
+
+    private String fallbackKeyword(SearchRequest request) {
+        ShoppingIntent intent = request.shoppingIntent();
+        if (intent != null && intent.productType() != null) {
+            String productType = intent.productType().toLowerCase(Locale.ROOT);
+            if (productType.contains("moisturizer") || productType.contains("moisturiser")) {
+                return "face moisturizer";
+            }
+            return productType;
+        }
+        if (intent != null && intent.category() != null) {
+            return intent.category();
+        }
+        return conciseTerms(request.rawQuery()).stream().findFirst().orElse("");
     }
 
     private String effectiveCategory(SearchRequest request) {
@@ -569,14 +622,40 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
         return "";
     }
 
-    private void addTerms(List<String> terms, List<String> values, int limit) {
-        values.stream().filter(value -> value != null && !value.isBlank()).limit(limit).forEach(terms::add);
+    private void addDistinctTerms(List<String> terms, List<String> values, int limit) {
+        if (values == null) {
+            return;
+        }
+        values.stream().filter(value -> value != null && !value.isBlank())
+                .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                .filter(value -> !isGenericRankingTerm(value))
+                .filter(value -> terms.stream().noneMatch(existing -> existing.equalsIgnoreCase(value)))
+                .limit(limit)
+                .forEach(terms::add);
     }
 
-    private void addTerms(List<String> terms, String value, int limit) {
+    private void addDistinctTerms(List<String> terms, String value, int limit) {
         if (limit > 0 && value != null && !value.isBlank()) {
-            terms.add(value);
+            addDistinctTerms(terms, List.of(value), limit);
         }
+    }
+
+    private List<String> conciseTerms(String rawQuery) {
+        Set<String> stopWords = Set.of("a", "an", "and", "for", "from", "i", "in", "is", "it", "me",
+                "my", "need", "of", "on", "should", "so", "the", "to", "under", "with", "within",
+                "show", "find", "want", "please", "best", "good", "brand", "brands", "less", "than",
+                "below", "upto", "up", "rs", "inr", "k");
+        LinkedHashMap<String, String> unique = new LinkedHashMap<>();
+        for (String token : rawQuery.toLowerCase(Locale.ROOT).split("[^\\p{L}\\p{N}]+")) {
+            if (token.length() > 2 && !stopWords.contains(token) && !token.matches("\\d+")) {
+                unique.putIfAbsent(token, token);
+            }
+        }
+        return unique.values().stream().limit(6).toList();
+    }
+
+    private boolean isGenericRankingTerm(String value) {
+        return Set.of("best", "recommended", "quality", "good", "premium", "value").contains(value);
     }
 
     private void add(List<String> parameters, String key, String value) {

@@ -74,12 +74,16 @@ class SerpApiProductSearchAdapterTest {
 
     @Test
     void buildsConciseIndiaQueryAndBudgetParameter() {
-        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, "{\"shopping_results\":[]}"));
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
+                {"shopping_results":[{"title":"White sneakers","price":"₹499",
+                "extracted_price":499,"currency":"INR","source":"Store",
+                "product_link":"https://store.example/sneakers"}]}
+                """));
         new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper()).search(request(5000));
 
         Map<String, String> query = queryParameters(transport.lastUri);
         assertEquals("google_shopping", query.get("engine"));
-        assertEquals("white sneakers under 5000", query.get("q"));
+        assertEquals("sneakers college white comfort", query.get("q"));
         assertEquals("test-key", query.get("api_key"));
         assertFalse(query.get("api_key").isBlank());
         assertEquals("en", query.get("hl"));
@@ -88,6 +92,33 @@ class SerpApiProductSearchAdapterTest {
         assertFalse(transport.lastUri.toString().contains("%2520"));
         assertFalse(transport.lastUri.toString().contains("%22"));
         assertFalse(transport.lastUri.toString().contains("favorite"));
+    }
+
+    @Test
+    void naturalLanguageQueryUsesConciseIntentTerms() {
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
+                {"shopping_results":[{"title":"Hydrating moisturizer","price":"₹799",
+                "extracted_price":799,"currency":"INR","source":"Store",
+                "product_link":"https://store.example/moisturizer"},
+                {"title":"Premium moisturizer","price":"₹1,100",
+                "extracted_price":1100,"currency":"INR","source":"Store",
+                "product_link":"https://store.example/premium-moisturizer"}]}
+                """));
+        SearchRequest request = new SearchRequest(
+                "moisturizer my skin is dry so I need moisturizer best under 1k and it should be good brands",
+                null, 1, null, SearchFilters.none(), SearchSortMode.RECOMMENDED,
+                new ShoppingIntent(
+                        "moisturizer my skin is dry so I need moisturizer best under 1k and it should be good brands",
+                        "Beauty", "Moisturizer", null, 1000D, List.of(), List.of(),
+                        List.of("dry skin"), List.of("best"), List.of("moisturizer", "dry skin"),
+                        null, "reputable-brands"));
+
+        List<Product> products = new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper()).search(request);
+
+        String providerQuery = queryParameters(transport.lastUri).get("q");
+        assertEquals("moisturizer dry skin", providerQuery);
+        assertFalse(providerQuery.contains("my skin is dry so I need"));
+        assertEquals(List.of("Hydrating moisturizer"), products.stream().map(Product::name).toList());
     }
 
     @Test

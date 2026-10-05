@@ -110,6 +110,36 @@ class RecommendationServiceTest {
     }
 
     @Test
+    void drySkinSignalsImproveRelevantProductRanking() {
+        ShoppingIntent intent = new ShoppingIntent("moisturizer dry skin", "Beauty", "moisturizer",
+                null, 1000D, List.of(), List.of(), List.of("dry skin"), List.of(),
+                List.of("moisturizer", "dry skin"));
+        List<Recommendation> results = service.rank(request("moisturizer dry skin", intent, null),
+                List.of(product("generic", "Brand", "Daily Moisturizer", "Beauty", "₹700", 4.2,
+                                "Light face moisturizer"),
+                        product("hydrating", "Brand", "Hydrating Ceramide Moisturizer", "Beauty", "₹800", 4.1,
+                                "Barrier support moisturizer")));
+
+        assertEquals("hydrating", results.getFirst().product().id());
+        assertTrue(results.getFirst().reasons().stream()
+                .anyMatch(reason -> reason.type() == RecommendationReason.Type.USE_CASE));
+    }
+
+    @Test
+    void reputableBrandSignalUsesProviderRatingAndBrandData() {
+        ShoppingIntent intent = new ShoppingIntent("best moisturizer good brands", "Beauty", "moisturizer",
+                null, 1000D, List.of(), List.of(), List.of(), List.of("best"),
+                List.of("moisturizer"), null, "reputable-brands");
+        List<Recommendation> results = service.rank(request("best moisturizer good brands", intent, null),
+                List.of(product("unbranded", "", "Moisturizer", "Beauty", "₹700", 4.8, "Moisturizer"),
+                        product("branded", "CeraVe", "Moisturizer", "Beauty", "₹800", 4.8, "Moisturizer")));
+
+        assertEquals("branded", results.getFirst().product().id());
+        assertTrue(results.getFirst().reasons().stream()
+                .anyMatch(reason -> reason.type() == RecommendationReason.Type.QUALITY));
+    }
+
+    @Test
     void missingRatingDoesNotCrashRanking() {
         List<Recommendation> results = service.rank(request("shoes", null, null),
                 List.of(product("missing-rating", "Veja", "Shoes", "Footwear", "₹4,500", Double.NaN, "Shoes")));

@@ -109,9 +109,11 @@ public final class GroqShoppingIntentProvider implements ShoppingIntentProvider 
             array.putObject("items").put("type", "string");
         }
         properties.set("shoppingStyle", nullableString());
+        properties.set("qualityPreference", nullableString());
         var required = definition.putArray("required");
         for (String field : List.of("category", "productType", "minBudget", "maxBudget",
-                "preferredBrands", "colors", "useCases", "priorities", "keywords", "shoppingStyle")) {
+                "preferredBrands", "colors", "useCases", "priorities", "keywords", "shoppingStyle",
+                "qualityPreference")) {
             required.add(field);
         }
         return format;
@@ -135,7 +137,11 @@ public final class GroqShoppingIntentProvider implements ShoppingIntentProvider 
         return "Extract shopping intent from natural-language shopping queries. Return only the JSON schema. "
                 + "Do not invent requirements. The current query always overrides saved preferences. "
                 + "Use null for unknown scalar values and empty arrays when there is no evidence. "
-                + "Normalize category to Fashion, Footwear, Electronics, Beauty, Accessories, Home, or Sports.";
+                + "Normalize category to Fashion, Footwear, Electronics, Beauty, Accessories, Home, or Sports. "
+                + "Convert phrases like 'my skin is dry' or 'for oily skin' into a concise useCases value. "
+                + "Convert 'good brands', 'reputable brands', or 'known brands' into qualityPreference='reputable-brands' "
+                + "and do not name brands unless the user names them. Convert 'best' or 'recommended' into a ranking priority. "
+                + "Interpret k as thousand in budgets, such as 1k = 1000.";
     }
 
     private String userPrompt(SearchRequest request) {
