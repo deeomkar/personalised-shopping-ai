@@ -1,7 +1,8 @@
 package com.myshop.component;
 
 import com.myshop.model.Product;
-import javafx.scene.image.Image;
+import com.myshop.service.RemoteImageService;
+import javafx.application.Platform;
 import javafx.scene.image.ImageView;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -9,6 +10,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
 public final class ProductArtwork extends StackPane {
+    private static final RemoteImageService IMAGE_SERVICE = RemoteImageService.shared();
 
     public ProductArtwork(Product product, double height) {
         this(product.artwork(), product.artworkClass(), height, product.imageUrl());
@@ -25,32 +27,25 @@ public final class ProductArtwork extends StackPane {
         getChildren().add(placeholder);
 
         if (imageUrl != null && !imageUrl.isBlank()) {
-            try {
-                Image remoteImage = new Image(imageUrl.trim(), true);
-                ImageView image = new ImageView(remoteImage);
-                image.setPreserveRatio(true);
-                image.setSmooth(true);
-                image.setFitWidth(imageWidth(height));
-                image.setFitHeight(Math.max(1, height - 24));
-                image.setVisible(false);
-                image.getStyleClass().add("product-image");
-                StackPane.setAlignment(image, Pos.CENTER);
-                StackPane.setMargin(image, new Insets(12));
-                getChildren().add(image);
+            ImageView image = new ImageView();
+            image.setPreserveRatio(true);
+            image.setSmooth(true);
+            image.setFitWidth(imageWidth(height));
+            image.setFitHeight(Math.max(1, height - 24));
+            image.setVisible(false);
+            image.setMouseTransparent(true);
+            image.getStyleClass().add("product-image");
+            StackPane.setAlignment(image, Pos.CENTER);
+            StackPane.setMargin(image, new Insets(12));
+            getChildren().add(image);
 
-                Runnable updateImageState = () -> {
-                    boolean ready = !remoteImage.isError()
-                            && remoteImage.getProgress() >= 1.0
-                            && remoteImage.getWidth() > 0;
-                    image.setVisible(ready);
-                    placeholder.setVisible(!ready);
-                };
-                remoteImage.progressProperty().addListener((observable, oldValue, newValue) -> updateImageState.run());
-                remoteImage.errorProperty().addListener((observable, oldValue, newValue) -> updateImageState.run());
-                updateImageState.run();
-            } catch (IllegalArgumentException ignored) {
-                // Keep the neutral artwork when a provider supplies an invalid image URL.
-            }
+            IMAGE_SERVICE.load(imageUrl).thenAccept(result -> Platform.runLater(() -> {
+                if (result.loaded()) {
+                    image.setImage(result.image());
+                    image.setVisible(true);
+                    placeholder.setVisible(false);
+                }
+            }));
         }
 
         setAlignment(Pos.CENTER);

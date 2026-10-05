@@ -20,6 +20,7 @@
         <surefire.version>3.5.3</surefire.version>
         <gemini.version>1.75.0</gemini.version>
         <jackson.version>2.19.2</jackson.version>
+        <webp.version>0.2.0</webp.version>
     </properties>
 
     <dependencies>
@@ -52,6 +53,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glavo</groupId>
+            <artifactId>webp</artifactId>
+            <version>${webp.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -2,6 +2,7 @@ package com.myshop.service;
 
 import java.awt.Desktop;
 import java.net.URI;
+import java.util.Objects;
 
 /** Opens only provider-returned HTTP(S) links and fails safely. */
 public final class ExternalLinkService {
@@ -24,11 +25,22 @@ public final class ExternalLinkService {
         if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             return Result.UNSUPPORTED;
         }
+        return open(value, uri -> Desktop.getDesktop().browse(uri));
+    }
+
+    static Result open(String value, Browser browser) {
+        Objects.requireNonNull(browser, "browser");
+        if (!isSafe(value)) return Result.INVALID_URL;
         try {
-            Desktop.getDesktop().browse(URI.create(value.trim()));
+            browser.browse(URI.create(value.trim()));
             return Result.OPENED;
         } catch (Exception exception) {
             return Result.FAILED;
         }
+    }
+
+    @FunctionalInterface
+    interface Browser {
+        void browse(URI uri) throws Exception;
     }
 }

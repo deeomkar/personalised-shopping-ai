@@ -476,12 +476,21 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
         if (candidate.startsWith("www.")) {
             return "https://" + candidate;
         }
-        // SerpApi may return product_link as a Google Shopping path rather than
-        // an absolute URL. It is still provider data, not a fabricated merchant URL.
-        if ("product_link".equals(field) && candidate.startsWith("/")) {
-            return "https://www.google.com" + candidate;
+        // SerpApi may return a Google Shopping path rather than an absolute URL.
+        // It is still provider data, resolved against the configured Google domain,
+        // not a fabricated merchant URL.
+        if (("link".equals(field) || "product_link".equals(field)) && candidate.startsWith("/")) {
+            return googleBaseUrl() + candidate;
         }
         return candidate;
+    }
+
+    private String googleBaseUrl() {
+        String domain = config.googleDomain();
+        if (!domain.toLowerCase(Locale.ROOT).startsWith("www.")) {
+            domain = "www." + domain;
+        }
+        return "https://" + domain;
     }
 
     private String firstHttpUrlFromArray(JsonNode values) {

@@ -145,7 +145,7 @@ class SerpApiProductSearchAdapterTest {
                 .search(request(5000));
 
         assertEquals("https://www.google.com/shopping/product/3", products.get(0).externalUrl());
-        assertEquals("https://www.google.com/shopping/product/4", products.get(1).externalUrl());
+        assertEquals("https://www.google.co.in/shopping/product/4", products.get(1).externalUrl());
     }
 
     @Test
