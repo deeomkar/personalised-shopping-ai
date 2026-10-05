@@ -7,6 +7,7 @@ import com.myshop.model.Product;
 import com.myshop.model.ProductOffer;
 import com.myshop.model.SearchFilters;
 import com.myshop.model.SearchRequest;
+import com.myshop.model.SearchResult;
 import com.myshop.model.SearchSortMode;
 import com.myshop.model.ShoppingIntent;
 import org.junit.jupiter.api.Test;
@@ -127,6 +128,61 @@ class SerpApiProductSearchAdapterTest {
         assertEquals("https://www.google.com/shopping/product/2", product.externalUrl());
         assertEquals("https://www.google.com/shopping/product/2", product.offers().getFirst().productUrl());
         assertEquals("https://images.example/product-link-only.webp", product.imageUrl());
+    }
+
+    @Test
+    void normalizesProviderProductLinkFormsWithoutInventingMerchantUrls() {
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
+                {"shopping_results":[
+                  {"title":"Protocol relative","product_id":"relative-1",
+                   "product_link":"//www.google.com/shopping/product/3"},
+                  {"title":"Path product","product_id":"relative-2",
+                   "product_link":"/shopping/product/4"}
+                ]}
+                """));
+
+        List<Product> products = new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper())
+                .search(request(5000));
+
+        assertEquals("https://www.google.com/shopping/product/3", products.get(0).externalUrl());
+        assertEquals("https://www.google.com/shopping/product/4", products.get(1).externalUrl());
+    }
+
+    @Test
+    void mapsSerpApiThumbnailFallbacksInDocumentedPriorityOrder() {
+        assertEquals("https://images.example/serpapi.webp", mappedImage("""
+                {"title":"SerpApi image","product_id":"image-1",
+                 "serpapi_thumbnail":"https://images.example/serpapi.webp",
+                 "thumbnails":["https://images.example/array.webp"]}
+                """));
+        assertEquals("https://images.example/array.webp", mappedImage("""
+                {"title":"Thumbnail array image","product_id":"image-2",
+                 "thumbnails":["https://images.example/array.webp"]}
+                """));
+        assertEquals("https://images.example/serpapi-array.webp", mappedImage("""
+                {"title":"SerpApi thumbnail array image","product_id":"image-3",
+                 "serpapi_thumbnails":["https://images.example/serpapi-array.webp"]}
+                """));
+    }
+
+    @Test
+    void preservesImageAndExternalUrlThroughSearchResult() {
+        Product product = new Product(
+                "product-1", "Brand", "Product", "Footwear", "₹999", null, null,
+                4.5, 10, "Store", null, "artwork-live", "https://images.example/product.webp",
+                "Description", false, List.of(), "https://store.example/product"
+        );
+        SearchResult result = SearchResult.success(request(5000), List.of(product));
+
+        assertEquals("https://images.example/product.webp", result.products().getFirst().imageUrl());
+        assertEquals("https://store.example/product", result.products().getFirst().externalUrl());
+    }
+
+    private String mappedImage(String item) {
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200,
+                "{\"shopping_results\":[" + item + "]}"));
+        return new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper())
+                .search(request(5000)).getFirst().imageUrl();
     }
 
     @Test

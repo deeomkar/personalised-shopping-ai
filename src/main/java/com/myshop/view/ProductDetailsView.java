@@ -55,6 +55,7 @@ public final class ProductDetailsView extends ScrollPane {
         VBox copy = new VBox(); copy.setSpacing(12); copy.setMaxWidth(540); copy.getStyleClass().add("detail-copy");
         addText(copy, product.brand(), "detail-brand", true);
         addText(copy, product.category(), "detail-category", false);
+        addText(copy, hasText(product.store()) ? "From " + product.store() : null, "detail-store", false);
         addText(copy, product.name(), "detail-name", true);
         if (hasRating(product)) copy.getChildren().add(new RatingView(product.rating(), product.reviewCount()));
         if (hasText(product.price())) copy.getChildren().add(new PriceView(product.price(), product.originalPrice(), product.discount()));
@@ -74,7 +75,7 @@ public final class ProductDetailsView extends ScrollPane {
         }
         String externalUrl = externalUrl(product);
         if (externalUrl != null) {
-            Button viewProduct = new Button("View product");
+            Button viewProduct = new Button(isGoogleShoppingUrl(externalUrl) ? "View product" : "Visit store");
             viewProduct.setMnemonicParsing(false);
             viewProduct.getStyleClass().add("primary-button");
             viewProduct.setOnAction(event -> {
@@ -152,5 +153,14 @@ public final class ProductDetailsView extends ScrollPane {
                 .filter(ExternalLinkService::isSafe)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private boolean isGoogleShoppingUrl(String url) {
+        try {
+            String host = java.net.URI.create(url).getHost();
+            return host != null && host.toLowerCase(java.util.Locale.ROOT).contains("google.");
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
     }
 }
