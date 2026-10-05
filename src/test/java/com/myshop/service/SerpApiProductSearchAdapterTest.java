@@ -149,6 +149,28 @@ class SerpApiProductSearchAdapterTest {
     }
 
     @Test
+    void encodesWhitespaceInGoogleShoppingProductLinkBeforeValidation() {
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
+                {"shopping_results":[{
+                  "title":"Moisturiser",
+                  "product_id":"moisturiser-1",
+                  "price":"₹999",
+                  "extracted_price":999,
+                  "currency":"INR",
+                  "source":"Store",
+                  "product_link":"https://www.google.co.in/search?q=moisturiser under 1000&rds=foo|bar"
+                }]}
+                """));
+
+        Product product = new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper())
+                .search(request(1000)).getFirst();
+
+        assertEquals("https://www.google.co.in/search?q=moisturiser%20under%201000&rds=foo%7Cbar",
+                product.externalUrl());
+        assertEquals(1, product.offers().size());
+    }
+
+    @Test
     void mapsSerpApiThumbnailFallbacksInDocumentedPriorityOrder() {
         assertEquals("https://images.example/serpapi.webp", mappedImage("""
                 {"title":"SerpApi image","product_id":"image-1",

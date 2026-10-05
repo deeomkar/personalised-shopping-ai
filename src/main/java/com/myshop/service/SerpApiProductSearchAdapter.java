@@ -471,18 +471,43 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
         }
         String candidate = value.trim();
         if (candidate.startsWith("//")) {
-            return "https:" + candidate;
+            return encodeUrlWhitespace("https:" + candidate);
         }
         if (candidate.startsWith("www.")) {
-            return "https://" + candidate;
+            return encodeUrlWhitespace("https://" + candidate);
         }
         // SerpApi may return a Google Shopping path rather than an absolute URL.
         // It is still provider data, resolved against the configured Google domain,
         // not a fabricated merchant URL.
         if (("link".equals(field) || "product_link".equals(field)) && candidate.startsWith("/")) {
-            return googleBaseUrl() + candidate;
+            candidate = googleBaseUrl() + candidate;
         }
-        return candidate;
+        return encodeUrlWhitespace(candidate);
+    }
+
+    /**
+     * SerpApi can return a Google Shopping URL whose query contains literal spaces.
+     * Keep the provider URL intact while making that URL valid for URI-based validation.
+     */
+    private String encodeUrlWhitespace(String value) {
+        StringBuilder normalized = new StringBuilder(value.length());
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (character == ' ') {
+                normalized.append("%20");
+            } else if (character == '\t') {
+                normalized.append("%09");
+            } else if (character == '\n') {
+                normalized.append("%0A");
+            } else if (character == '\r') {
+                normalized.append("%0D");
+            } else if (character == '|') {
+                normalized.append("%7C");
+            } else {
+                normalized.append(character);
+            }
+        }
+        return normalized.toString();
     }
 
     private String googleBaseUrl() {
