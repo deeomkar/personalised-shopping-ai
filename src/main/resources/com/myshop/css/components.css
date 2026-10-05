@@ -622,3 +622,21 @@
     -fx-font-weight: 600;
     -fx-text-fill: #555752;
 }
+
+.detail-external-actions {
+    -fx-alignment: center-left;
+}
+
+.detail-external-link {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 2 3;
+    -fx-text-fill: #1F4D3B;
+    -fx-font-size: 12px;
+    -fx-underline: true;
+}
+
+.detail-external-link:hover,
+.detail-external-link:focused {
+    -fx-text-fill: #173D2F;
+}

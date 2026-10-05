@@ -11,9 +11,11 @@ import com.myshop.model.ProductOffer;
 import com.myshop.model.Recommendation;
 import com.myshop.service.ExternalLinkService;
 import com.myshop.service.ProductOfferService;
+import com.myshop.service.ProductLinkResolver;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
@@ -73,17 +75,30 @@ public final class ProductDetailsView extends ScrollPane {
             Button compare = new Button("Compare"); compare.setMnemonicParsing(false); compare.getStyleClass().add("secondary-button");
             compare.setOnAction(event -> compareAction.run()); actions.getChildren().add(compare);
         }
-        String externalUrl = externalUrl(product);
+        String externalUrl = ProductLinkResolver.resolve(product);
         if (externalUrl != null) {
-            Button viewProduct = new Button(isGoogleShoppingUrl(externalUrl) ? "View product" : "Visit store");
+            String actionLabel = ProductLinkResolver.actionLabel(externalUrl);
+            Button viewProduct = new Button(actionLabel);
             viewProduct.setMnemonicParsing(false);
             viewProduct.getStyleClass().add("primary-button");
-            viewProduct.setOnAction(event -> {
+            Hyperlink openPage = new Hyperlink("Open product page");
+            openPage.setMnemonicParsing(false);
+            openPage.getStyleClass().add("detail-external-link");
+            openPage.setAccessibleText("Open product page in browser");
+
+            Runnable open = () -> {
                 if (ExternalLinkService.open(externalUrl) != ExternalLinkService.Result.OPENED) {
                     viewProduct.setText("Link unavailable");
+                    openPage.setText("Product page unavailable");
                 }
-            });
-            actions.getChildren().add(0, viewProduct);
+            };
+            viewProduct.setOnAction(event -> open.run());
+            openPage.setOnAction(event -> open.run());
+
+            VBox externalActions = new VBox(viewProduct, openPage);
+            externalActions.setSpacing(3);
+            externalActions.getStyleClass().add("detail-external-actions");
+            actions.getChildren().add(0, externalActions);
         }
         if (!actions.getChildren().isEmpty()) copy.getChildren().add(actions);
 
@@ -144,23 +159,4 @@ public final class ProductDetailsView extends ScrollPane {
                 : amount + (hasText(offer.currency()) ? " " + offer.currency() : "");
     }
 
-    private String externalUrl(Product product) {
-        if (ExternalLinkService.isSafe(product.externalUrl())) {
-            return product.externalUrl();
-        }
-        return product.offers().stream()
-                .map(ProductOffer::productUrl)
-                .filter(ExternalLinkService::isSafe)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private boolean isGoogleShoppingUrl(String url) {
-        try {
-            String host = java.net.URI.create(url).getHost();
-            return host != null && host.toLowerCase(java.util.Locale.ROOT).contains("google.");
-        } catch (IllegalArgumentException exception) {
-            return false;
-        }
-    }
 }
