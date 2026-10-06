@@ -77,7 +77,10 @@ class SerpApiProductSearchAdapterTest {
         FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
                 {"shopping_results":[{"title":"White sneakers","price":"₹499",
                 "extracted_price":499,"currency":"INR","source":"Store",
-                "product_link":"https://store.example/sneakers"}]}
+                "product_link":"https://store.example/sneakers"},
+                {"title":"White running sneakers","price":"₹799",
+                "extracted_price":799,"currency":"INR","source":"Store",
+                "product_link":"https://store.example/running-sneakers"}]}
                 """));
         new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper()).search(request(5000));
 
@@ -102,7 +105,10 @@ class SerpApiProductSearchAdapterTest {
                 "product_link":"https://store.example/moisturizer"},
                 {"title":"Premium moisturizer","price":"₹1,100",
                 "extracted_price":1100,"currency":"INR","source":"Store",
-                "product_link":"https://store.example/premium-moisturizer"}]}
+                "product_link":"https://store.example/premium-moisturizer"},
+                {"title":"Daily moisturizer","price":"₹899",
+                "extracted_price":899,"currency":"INR","source":"Store",
+                "product_link":"https://store.example/daily-moisturizer"}]}
                 """));
         SearchRequest request = new SearchRequest(
                 "moisturizer my skin is dry so I need moisturizer best under 1k and it should be good brands",
@@ -118,7 +124,8 @@ class SerpApiProductSearchAdapterTest {
         String providerQuery = queryParameters(transport.lastUri).get("q");
         assertEquals("moisturizer dry skin", providerQuery);
         assertFalse(providerQuery.contains("my skin is dry so I need"));
-        assertEquals(List.of("Hydrating moisturizer"), products.stream().map(Product::name).toList());
+        assertEquals(List.of("Hydrating moisturizer", "Daily moisturizer"),
+                products.stream().map(Product::name).toList());
     }
 
     @Test
@@ -126,7 +133,10 @@ class SerpApiProductSearchAdapterTest {
         FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200,
                 "{\"shopping_results\":[{\"title\":\"Makeup Foundation\",\"price\":\"₹599\","
                         + "\"extracted_price\":599,\"currency\":\"INR\",\"source\":\"Store\","
-                        + "\"product_link\":\"https://store.example/foundation\"}]}"));
+                        + "\"product_link\":\"https://store.example/foundation\"},"
+                        + "{\"title\":\"Liquid Foundation\",\"price\":\"₹699\","
+                        + "\"extracted_price\":699,\"currency\":\"INR\",\"source\":\"Store\","
+                        + "\"product_link\":\"https://store.example/liquid-foundation\"}]}"));
         SearchRequest request = new SearchRequest(
                 "makeup foundation", null, 1, null, SearchFilters.none(), SearchSortMode.RECOMMENDED,
                 new ShoppingIntent("makeup foundation", "Beauty", "foundation", null, null, List.of(), List.of(),

@@ -26,6 +26,7 @@ import java.util.Set;
 
 /** SerpApi Google Shopping adapter isolated behind the live product seam. */
 public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapter {
+    private static final int MIN_RELEVANT_RESULTS_BEFORE_RETRY = 2;
     private final SerpApiConfig config;
     private final SerpApiTransport transport;
     private final ObjectMapper objectMapper;
@@ -75,11 +76,8 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
         if (intent == null || intent.productType() == null || intent.productType().isBlank()) {
             return false;
         }
-        String productType = intent.productType().toLowerCase(Locale.ROOT);
-        return products.stream().noneMatch(product ->
-                (product.name() != null && product.name().toLowerCase(Locale.ROOT).contains(productType))
-                        || (product.category() != null
-                        && product.category().toLowerCase(Locale.ROOT).contains(productType)));
+        return ProductTypeRelevance.filter(intent.productType(), products).size()
+                < MIN_RELEVANT_RESULTS_BEFORE_RETRY;
     }
 
     private List<Product> searchOnce(SearchRequest request, URI requestUri) {
