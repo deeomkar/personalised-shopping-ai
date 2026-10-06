@@ -18,6 +18,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.util.Objects;
@@ -188,6 +189,7 @@ public final class DiscoverView extends ScrollPane {
     private VBox createRecentlyViewedSection() {
         HBox recentRow = new HBox();
         recentRow.setSpacing(14);
+        recentRow.setMinHeight(Region.USE_PREF_SIZE);
         List<Product> recentlyViewed = historyService == null ? MockCatalogService.recentlyViewed()
                 : historyService.recentlyViewed(userId).stream()
                 .filter(this::isIndiaSafeProduct)
@@ -201,7 +203,7 @@ public final class DiscoverView extends ScrollPane {
         recentScroll.setFitToWidth(false);
         recentScroll.setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
         recentScroll.setVbarPolicy(ScrollBarPolicy.NEVER);
-        recentScroll.setPrefViewportHeight(98);
+        recentScroll.setPrefViewportHeight(Region.USE_COMPUTED_SIZE);
         recentScroll.getStyleClass().add("recent-scroll");
 
         VBox section = new VBox(new SectionHeading("Recently viewed"), recentScroll);
