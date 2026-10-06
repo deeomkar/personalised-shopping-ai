@@ -363,11 +363,9 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
             addDistinctTerms(terms, intent.useCases(), 2);
             addDistinctTerms(terms, intent.colors(), 2);
             addDistinctTerms(terms, intent.priorities(), 1);
+            addDistinctKeywordTokens(terms, intent.keywords(), 3);
             if (terms.isEmpty()) {
                 addDistinctTerms(terms, intent.category(), 1);
-            }
-            if (terms.isEmpty()) {
-                addDistinctTerms(terms, intent.keywords(), 3);
             }
             if (!terms.isEmpty()) {
                 return String.join(" ", terms);
@@ -637,6 +635,25 @@ public final class SerpApiProductSearchAdapter implements LiveProductSearchAdapt
     private void addDistinctTerms(List<String> terms, String value, int limit) {
         if (limit > 0 && value != null && !value.isBlank()) {
             addDistinctTerms(terms, List.of(value), limit);
+        }
+    }
+
+    private void addDistinctKeywordTokens(List<String> terms, List<String> values, int limit) {
+        if (values == null || limit < 1) {
+            return;
+        }
+        int added = 0;
+        for (String value : values) {
+            for (String token : conciseTerms(value)) {
+                if (terms.stream().noneMatch(existing -> existing.equalsIgnoreCase(token)
+                        || existing.contains(token))) {
+                    terms.add(token);
+                    added++;
+                    if (added >= limit) {
+                        return;
+                    }
+                }
+            }
         }
     }
 

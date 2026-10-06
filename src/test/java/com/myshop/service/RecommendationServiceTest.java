@@ -33,6 +33,68 @@ class RecommendationServiceTest {
     }
 
     @Test
+    void explicitFoundationTypeRemovesUnrelatedBeautyProducts() {
+        ShoppingIntent intent = intent("makeup foundation", "Beauty", "Foundation");
+        List<Recommendation> results = service.rank(request("makeup foundation", intent, null),
+                List.of(product("foundation", "Maybelline", "Fit Me Matte Foundation", "Beauty", "₹599", 4.1,
+                                "Liquid face foundation"),
+                        product("lipstick", "Maybelline", "SuperStay Lipstick", "Beauty", "₹899", 4.9,
+                                "Long lasting color")));
+
+        assertEquals(List.of("foundation"), results.stream().map(item -> item.product().id()).toList());
+    }
+
+    @Test
+    void explicitMoisturizerTypeRemovesCleanserResults() {
+        ShoppingIntent intent = intent("moisturizer for dry skin under 1000", "Beauty", "Moisturizer");
+        List<Recommendation> results = service.rank(request("moisturizer for dry skin under 1000", intent, null),
+                List.of(product("moisturizer", "CeraVe", "Hydrating Moisturizer", "Beauty", "₹799", 4.2,
+                                "Moisturizing cream for dry skin"),
+                        product("cleanser", "CeraVe", "Foaming Cleanser", "Beauty", "₹699", 4.9,
+                                "Gentle cleanser")));
+
+        assertEquals(List.of("moisturizer"), results.stream().map(item -> item.product().id()).toList());
+    }
+
+    @Test
+    void explicitSneakerTypeRemovesOtherFashionResults() {
+        ShoppingIntent intent = intent("comfortable white sneakers under 3000", "Footwear", "Sneakers");
+        List<Recommendation> results = service.rank(request("comfortable white sneakers under 3000", intent, null),
+                List.of(product("sneaker", "Campus", "White Running Shoes", "Footwear", "₹2,499", 4.0,
+                                "Comfortable trainers"),
+                        product("shirt", "Uniqlo", "White Oxford Shirt", "Fashion", "₹1,999", 4.9,
+                                "Cotton shirt")));
+
+        assertEquals(List.of("sneaker"), results.stream().map(item -> item.product().id()).toList());
+    }
+
+    @Test
+    void explicitHeadphoneTypeRemovesCasesAndChargers() {
+        ShoppingIntent intent = intent("wireless headphones with good battery", "Electronics", "Headphones");
+        List<Recommendation> results = service.rank(request("wireless headphones with good battery", intent, null),
+                List.of(product("headphones", "Sony", "Wireless Headphones", "Electronics", "₹4,999", 4.0,
+                                "Long battery life"),
+                        product("case", "Sony", "Headphone Case", "Electronics", "₹999", 4.9,
+                                "Protective case"),
+                        product("charger", "Sony", "USB Charger", "Electronics", "₹799", 5.0,
+                                "Fast charger")));
+
+        assertEquals(List.of("headphones"), results.stream().map(item -> item.product().id()).toList());
+    }
+
+    @Test
+    void explicitWatchTypeRemovesWatchStraps() {
+        ShoppingIntent intent = intent("black analog watch under 4000", "Accessories", "Watch");
+        List<Recommendation> results = service.rank(request("black analog watch under 4000", intent, null),
+                List.of(product("watch", "Seiko", "Black Analog Watch", "Accessories", "₹3,999", 4.0,
+                                "Analog timepiece"),
+                        product("strap", "Seiko", "Leather Watch Strap", "Accessories", "₹1,299", 5.0,
+                                "Replacement strap")));
+
+        assertEquals(List.of("watch"), results.stream().map(item -> item.product().id()).toList());
+    }
+
+    @Test
     void explicitCategoryMatchRanksHigher() {
         List<Recommendation> results = service.rank(
                 new SearchRequest("", "Footwear", 1, null, SearchFilters.none(), SearchSortMode.RECOMMENDED),

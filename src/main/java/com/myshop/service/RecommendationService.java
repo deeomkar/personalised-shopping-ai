@@ -51,7 +51,10 @@ public final class RecommendationService {
 
     public List<Recommendation> rank(SearchRequest request, List<Product> products, BehaviorProfile behaviorProfile) {
         Objects.requireNonNull(request, "request");
-        List<Product> safeProducts = List.copyOf(products == null ? List.of() : products);
+        List<Product> safeProducts = ProductTypeRelevance.filter(
+                request.shoppingIntent() == null ? null : request.shoppingIntent().productType(),
+                products
+        );
         List<Recommendation> recommendations = safeProducts.stream()
                 .map(product -> score(request, product, safeProducts,
                         behaviorProfile == null ? BehaviorProfile.empty() : behaviorProfile))
@@ -84,7 +87,7 @@ public final class RecommendationService {
         List<RecommendationReason> reasons = new ArrayList<>();
         double points = 0;
 
-        if (intent != null && intent.productType() != null && matches(searchable, intent.productType())) {
+        if (intent != null && intent.productType() != null && ProductTypeRelevance.matches(product, intent.productType())) {
             points += PRODUCT_TYPE_WEIGHT;
             reasons.add(new RecommendationReason(RecommendationReason.Type.PRODUCT_MATCH,
                     "Matches " + intent.productType()));

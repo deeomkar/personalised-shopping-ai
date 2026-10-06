@@ -75,6 +75,15 @@ class ShoppingIntentServiceTest {
     }
 
     @Test
+    void fallbackKeepsExplicitFoundationProductType() {
+        ShoppingIntent intent = new FallbackShoppingIntentProvider().understand(request("makeup foundation"));
+
+        assertEquals("Beauty", intent.category());
+        assertEquals("foundation", intent.productType());
+        assertTrue(intent.keywords().contains("makeup"));
+    }
+
+    @Test
     void missingGeminiKeyUsesFallbackProvider() {
         ShoppingIntent expected = ShoppingIntent.empty("headphones");
         ShoppingIntentProvider fallback = request -> expected;

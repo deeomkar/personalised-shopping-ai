@@ -65,8 +65,9 @@ public final class FallbackShoppingIntentProvider implements ShoppingIntentProvi
     }
 
     private String productType(String query) {
-        for (String type : List.of("sneakers", "headphones", "earbuds", "moisturizer", "moisturiser",
-                "cleanser", "sunscreen", "serum", "shirt", "jacket", "watch", "bag")) {
+        for (String type : List.of("sneakers", "sneaker", "headphones", "headphone", "earbuds", "earbud",
+                "foundation", "moisturizer", "moisturiser", "cleanser", "sunscreen", "serum", "shirt",
+                "jacket", "watch", "bag")) {
             if (query.contains(type)) return "moisturiser".equals(type) ? "moisturizer" : type;
         }
         return null;
@@ -98,6 +99,7 @@ public final class FallbackShoppingIntentProvider implements ShoppingIntentProvi
         Set<String> values = new LinkedHashSet<>();
         String type = productType(query);
         if (type != null) values.add(type);
+        if (query.contains("makeup")) values.add("makeup");
         values.addAll(useCases(query));
         values.addAll(matchingLabels(COLORS, query));
         values.addAll(matchingTerms(query, List.of("comfortable", "minimal", "college", "daily wear", "everyday", "premium")));

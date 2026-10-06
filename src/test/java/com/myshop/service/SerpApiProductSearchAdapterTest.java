@@ -122,6 +122,24 @@ class SerpApiProductSearchAdapterTest {
     }
 
     @Test
+    void keepsExplicitProductTypeAheadOfCategoryInProviderQuery() {
+        FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200,
+                "{\"shopping_results\":[{\"title\":\"Makeup Foundation\",\"price\":\"₹599\","
+                        + "\"extracted_price\":599,\"currency\":\"INR\",\"source\":\"Store\","
+                        + "\"product_link\":\"https://store.example/foundation\"}]}"));
+        SearchRequest request = new SearchRequest(
+                "makeup foundation", null, 1, null, SearchFilters.none(), SearchSortMode.RECOMMENDED,
+                new ShoppingIntent("makeup foundation", "Beauty", "foundation", null, null, List.of(), List.of(),
+                        List.of(), List.of(), List.of("makeup", "foundation")));
+
+        new SerpApiProductSearchAdapter(config(), transport, new ObjectMapper()).search(request);
+
+        String providerQuery = queryParameters(transport.lastUri).get("q");
+        assertEquals("foundation makeup", providerQuery);
+        assertFalse(providerQuery.equalsIgnoreCase("beauty"));
+    }
+
+    @Test
     void filtersOverBudgetProductsAndIgnoresMalformedItems() {
         FakeTransport transport = new FakeTransport(new SerpApiHttpResponse(200, """
                 {"shopping_results":[
