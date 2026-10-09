@@ -31,10 +31,13 @@ public final class CompactProductCard extends HBox {
         Label name = new Label(product.name());
         name.setWrapText(true);
         name.getStyleClass().add("compact-name");
-        Label price = new Label(product.price());
-        price.getStyleClass().add("compact-price");
 
-        VBox details = new VBox(brand, name, price);
+        VBox details = new VBox(brand, name);
+        if (!text(product.price()).isBlank()) {
+            Label price = new Label(product.price());
+            price.getStyleClass().add("compact-price");
+            details.getChildren().add(price);
+        }
         details.setSpacing(4);
         details.setAlignment(Pos.CENTER_LEFT);
 

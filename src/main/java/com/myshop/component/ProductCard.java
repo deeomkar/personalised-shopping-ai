@@ -57,18 +57,21 @@ public final class ProductCard extends VBox {
 
         Label name = new Label(product.name());
         name.setWrapText(true);
+        name.setMaxHeight(42);
         name.getStyleClass().add("product-name");
 
         PriceView price = new PriceView(product.price(), product.originalPrice(), product.discount());
         HBox meta = new HBox();
         if (Double.isFinite(product.rating()) && product.rating() > 0) meta.getChildren().add(new RatingView(product.rating(), product.reviewCount()));
-        if (!text(product.store()).isBlank()) { Label store = new Label("at " + product.store()); store.getStyleClass().add("product-store"); meta.getChildren().add(store); }
+        if (!text(product.store()).isBlank()) { Label store = new Label("From " + product.store()); store.getStyleClass().add("product-store"); meta.getChildren().add(store); }
         meta.setAlignment(Pos.CENTER_LEFT);
         meta.setSpacing(8);
 
-        VBox details = new VBox(brand, name, price, meta);
+        VBox details = new VBox(brand, name);
+        if (!text(product.price()).isBlank() || !text(product.originalPrice()).isBlank()) details.getChildren().add(price);
+        if (!meta.getChildren().isEmpty()) details.getChildren().add(meta);
         if (recommendation != null && !recommendation.reasons().isEmpty()) {
-            details.getChildren().add(new RecommendationNote(recommendation));
+            details.getChildren().add(compactRecommendation(recommendation));
         }
         details.setSpacing(7);
         details.getStyleClass().add("product-details");
@@ -105,6 +108,28 @@ public final class ProductCard extends VBox {
             saveButton.getStyleClass().remove("is-saved");
             saveButton.setIconColor(Color.web("#737373"));
         }
+    }
+
+    private HBox compactRecommendation(Recommendation recommendation) {
+        Label match = new Label(recommendation.matchLabel());
+        match.getStyleClass().add("recommendation-label");
+        HBox hint = new HBox(match);
+        if (!recommendation.reasons().isEmpty()) {
+            Label reason = new Label(compactReason(recommendation.reasons().getFirst().text()));
+            reason.setWrapText(false);
+            reason.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
+            reason.getStyleClass().add("recommendation-hint");
+            hint.getChildren().add(reason);
+        }
+        hint.setAlignment(Pos.CENTER_LEFT);
+        hint.setSpacing(7);
+        hint.getStyleClass().add("recommendation-compact");
+        return hint;
+    }
+
+    private String compactReason(String reason) {
+        if (reason == null || reason.isBlank()) return "";
+        return reason.replace("Matches your ", "Matches ");
     }
 
     private String text(String value) { return value == null ? "" : value; }

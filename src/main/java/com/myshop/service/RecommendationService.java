@@ -31,6 +31,7 @@ public final class RecommendationService {
     static final double BRAND_WEIGHT = 8;
     static final double USE_CASE_WEIGHT = 6;
     static final double PRIORITY_WEIGHT = 6;
+    static final double QUALITY_WEIGHT = 8;
     static final double PREFERENCE_CATEGORY_WEIGHT = 4;
     static final double PREFERENCE_PRIORITY_WEIGHT = 2;
     static final double FAVORITE_BRAND_WEIGHT = 4;
@@ -50,7 +51,10 @@ public final class RecommendationService {
 
     public List<Recommendation> rank(SearchRequest request, List<Product> products, BehaviorProfile behaviorProfile) {
         Objects.requireNonNull(request, "request");
-        List<Product> safeProducts = List.copyOf(products == null ? List.of() : products);
+        List<Product> safeProducts = ProductTypeRelevance.filter(
+                request.shoppingIntent() == null ? null : request.shoppingIntent().productType(),
+                products
+        );
         List<Recommendation> recommendations = safeProducts.stream()
                 .map(product -> score(request, product, safeProducts,
                         behaviorProfile == null ? BehaviorProfile.empty() : behaviorProfile))
@@ -83,7 +87,7 @@ public final class RecommendationService {
         List<RecommendationReason> reasons = new ArrayList<>();
         double points = 0;
 
-        if (intent != null && intent.productType() != null && matches(searchable, intent.productType())) {
+        if (intent != null && intent.productType() != null && ProductTypeRelevance.matches(product, intent.productType())) {
             points += PRODUCT_TYPE_WEIGHT;
             reasons.add(new RecommendationReason(RecommendationReason.Type.PRODUCT_MATCH,
                     "Matches " + intent.productType()));
@@ -143,17 +147,35 @@ public final class RecommendationService {
         }
 
         if (intent != null && !intent.useCases().isEmpty()
-                && intent.useCases().stream().anyMatch(value -> matches(searchable, value))) {
+                && intent.useCases().stream().anyMatch(value -> matchesSignal(searchable, value))) {
             points += USE_CASE_WEIGHT;
             reasons.add(new RecommendationReason(RecommendationReason.Type.USE_CASE,
                     "Matches your " + intent.useCases().getFirst() + " search"));
         }
 
         if (intent != null && !intent.priorities().isEmpty()
-                && intent.priorities().stream().anyMatch(value -> matches(searchable, value))) {
+                && intent.priorities().stream().anyMatch(value -> matchesSignal(searchable, value))) {
             points += PRIORITY_WEIGHT;
             reasons.add(new RecommendationReason(RecommendationReason.Type.PRIORITY,
                     "Matches your " + intent.priorities().getFirst() + " priority"));
+        }
+
+        if (intent != null && "reputable-brands".equalsIgnoreCase(intent.qualityPreference())) {
+            boolean identifiableBrand = !nullToEmpty(product.brand()).isBlank();
+            boolean identifiableSource = !nullToEmpty(product.store()).isBlank();
+            boolean strongProductSignals = safeRating(product) >= 4.0 || product.reviewCount() >= 20;
+            if (identifiableBrand) {
+                points += QUALITY_WEIGHT / 2;
+            } else if (identifiableSource) {
+                points += QUALITY_WEIGHT / 4;
+            }
+            if (strongProductSignals) {
+                points += QUALITY_WEIGHT / 2;
+            }
+            if ((identifiableBrand || identifiableSource) && strongProductSignals) {
+                reasons.add(new RecommendationReason(RecommendationReason.Type.QUALITY,
+                        "Identifiable source with strong quality signals"));
+            }
         }
 
         if (preference != null) {
@@ -199,6 +221,7 @@ public final class RecommendationService {
         }
 
         double normalizedScore = Math.max(0, Math.min(100, points / MAX_SCORE * 100));
+        reasons.sort(Comparator.comparingInt(this::reasonPriority));
         return new Recommendation(product, normalizedScore, reasons);
     }
 
@@ -279,6 +302,39 @@ public final class RecommendationService {
                 && searchable.contains(normalized.substring(0, normalized.length() - 1) + "ies");
     }
 
+    private boolean matchesSignal(String searchable, String signal) {
+        if (matches(searchable, signal)) {
+            return true;
+        }
+        String normalized = signal == null ? "" : signal.toLowerCase(Locale.ROOT);
+        List<String> relatedTerms = new ArrayList<>();
+        if (normalized.contains("dry skin")) {
+            relatedTerms.addAll(List.of("dry", "hydrat", "barrier", "ceramide", "nourish"));
+        } else if (normalized.contains("oily skin")) {
+            relatedTerms.addAll(List.of("oily", "oil control", "matte", "sebum", "non-comedogenic"));
+        } else if (normalized.contains("comfortable") || normalized.contains("comfort")) {
+            relatedTerms.addAll(List.of("comfort", "cushion", "soft", "lightweight"));
+        } else if (normalized.contains("battery")) {
+            relatedTerms.addAll(List.of("battery", "hours", "wireless"));
+        }
+        return relatedTerms.stream().anyMatch(searchable::contains);
+    }
+
+    private int reasonPriority(RecommendationReason reason) {
+        return switch (reason.type()) {
+            case USE_CASE -> 0;
+            case QUALITY -> 1;
+            case BRAND_MATCH, FAVORITE_BRAND -> 2;
+            case BUDGET -> 3;
+            case PRODUCT_MATCH -> 4;
+            case CATEGORY_MATCH -> 5;
+            case COLOR_MATCH -> 6;
+            case PRIORITY -> 7;
+            case RATING -> 8;
+            case PREFERENCE_CATEGORY -> 9;
+        };
+    }
+
     private String searchableText(Product product) {
         return String.join(" ", nullToEmpty(product.brand()), nullToEmpty(product.name()),
                 nullToEmpty(product.category()), nullToEmpty(product.description()), nullToEmpty(product.store()))
@@ -320,9 +376,7 @@ public final class RecommendationService {
     private String formatBudget(double value, String query) {
         NumberFormat format = NumberFormat.getIntegerInstance(Locale.ROOT);
         format.setGroupingUsed(true);
-        String symbol = query != null && (query.contains("₹") || query.toLowerCase(Locale.ROOT).contains("inr"))
-                ? "₹" : query != null && query.contains("$") ? "$" : "";
-        return symbol + format.format(value);
+        return "₹" + format.format(value);
     }
 
     private String nullToEmpty(String value) {

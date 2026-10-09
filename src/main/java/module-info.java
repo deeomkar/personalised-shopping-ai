@@ -9,6 +9,7 @@ module com.myshop {
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.annotation;
+    requires org.glavo.webp;
 
     exports com.myshop;
     opens com.myshop.controller to javafx.fxml;

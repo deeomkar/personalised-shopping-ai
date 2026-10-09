@@ -11,9 +11,11 @@ import com.myshop.model.ProductOffer;
 import com.myshop.model.Recommendation;
 import com.myshop.service.ExternalLinkService;
 import com.myshop.service.ProductOfferService;
+import com.myshop.service.ProductLinkResolver;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
@@ -55,6 +57,7 @@ public final class ProductDetailsView extends ScrollPane {
         VBox copy = new VBox(); copy.setSpacing(12); copy.setMaxWidth(540); copy.getStyleClass().add("detail-copy");
         addText(copy, product.brand(), "detail-brand", true);
         addText(copy, product.category(), "detail-category", false);
+        addText(copy, hasText(product.store()) ? "From " + product.store() : null, "detail-store", false);
         addText(copy, product.name(), "detail-name", true);
         if (hasRating(product)) copy.getChildren().add(new RatingView(product.rating(), product.reviewCount()));
         if (hasText(product.price())) copy.getChildren().add(new PriceView(product.price(), product.originalPrice(), product.discount()));
@@ -71,6 +74,31 @@ public final class ProductDetailsView extends ScrollPane {
         if (compareAction != null) {
             Button compare = new Button("Compare"); compare.setMnemonicParsing(false); compare.getStyleClass().add("secondary-button");
             compare.setOnAction(event -> compareAction.run()); actions.getChildren().add(compare);
+        }
+        String externalUrl = ProductLinkResolver.resolve(product);
+        if (externalUrl != null) {
+            String actionLabel = ProductLinkResolver.actionLabel(externalUrl);
+            Button viewProduct = new Button(actionLabel);
+            viewProduct.setMnemonicParsing(false);
+            viewProduct.getStyleClass().add("primary-button");
+            Hyperlink openPage = new Hyperlink("Open product page");
+            openPage.setMnemonicParsing(false);
+            openPage.getStyleClass().add("detail-external-link");
+            openPage.setAccessibleText("Open product page in browser");
+
+            Runnable open = () -> {
+                if (ExternalLinkService.open(externalUrl) != ExternalLinkService.Result.OPENED) {
+                    viewProduct.setText("Link unavailable");
+                    openPage.setText("Product page unavailable");
+                }
+            };
+            viewProduct.setOnAction(event -> open.run());
+            openPage.setOnAction(event -> open.run());
+
+            VBox externalActions = new VBox(viewProduct, openPage);
+            externalActions.setSpacing(3);
+            externalActions.getStyleClass().add("detail-external-actions");
+            actions.getChildren().add(0, externalActions);
         }
         if (!actions.getChildren().isEmpty()) copy.getChildren().add(actions);
 
@@ -102,7 +130,7 @@ public final class ProductDetailsView extends ScrollPane {
         offers.forEach(offer -> {
             HBox row = new HBox(); row.setAlignment(Pos.CENTER_LEFT); row.setSpacing(14); row.getStyleClass().add("offer-row");
             Label store = new Label(offer.storeName()); store.getStyleClass().add("offer-store");
-            Label price = new Label(offer.price().toPlainString() + " " + offer.currency()); price.getStyleClass().add("offer-price");
+            Label price = new Label(formatOfferPrice(offer)); price.getStyleClass().add("offer-price");
             VBox meta = new VBox(store, price); meta.setSpacing(3); HBox.setHgrow(meta, Priority.ALWAYS); row.getChildren().add(meta);
             if (offer.delivery() != null) { Label delivery = new Label(offer.delivery()); delivery.getStyleClass().add("detail-muted"); row.getChildren().add(delivery); }
             if (ExternalLinkService.isSafe(offer.productUrl())) {
@@ -123,4 +151,12 @@ public final class ProductDetailsView extends ScrollPane {
 
     private boolean hasRating(Product product) { return Double.isFinite(product.rating()) && product.rating() > 0; }
     private boolean hasText(String value) { return value != null && !value.isBlank(); }
+
+    private String formatOfferPrice(ProductOffer offer) {
+        String amount = offer.price().stripTrailingZeros().toPlainString();
+        return "INR".equalsIgnoreCase(offer.currency())
+                ? "₹" + amount
+                : amount + (hasText(offer.currency()) ? " " + offer.currency() : "");
+    }
+
 }

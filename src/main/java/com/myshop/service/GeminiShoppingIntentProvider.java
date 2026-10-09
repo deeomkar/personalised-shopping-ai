@@ -23,20 +23,21 @@ public final class GeminiShoppingIntentProvider implements ShoppingIntentProvide
             .build();
     private static final Schema INTENT_SCHEMA = Schema.builder()
             .type(Type.Known.OBJECT)
-            .properties(Map.of(
-                    "category", optionalString(),
-                    "productType", optionalString(),
-                    "minBudget", optionalNumber(),
-                    "maxBudget", optionalNumber(),
-                    "preferredBrands", STRING_LIST,
-                    "colors", STRING_LIST,
-                    "useCases", STRING_LIST,
-                    "priorities", STRING_LIST,
-                    "keywords", STRING_LIST,
-                    "shoppingStyle", optionalString()
+            .properties(Map.ofEntries(
+                    Map.entry("category", optionalString()),
+                    Map.entry("productType", optionalString()),
+                    Map.entry("minBudget", optionalNumber()),
+                    Map.entry("maxBudget", optionalNumber()),
+                    Map.entry("preferredBrands", STRING_LIST),
+                    Map.entry("colors", STRING_LIST),
+                    Map.entry("useCases", STRING_LIST),
+                    Map.entry("priorities", STRING_LIST),
+                    Map.entry("keywords", STRING_LIST),
+                    Map.entry("shoppingStyle", optionalString()),
+                    Map.entry("qualityPreference", optionalString())
             ))
             .required("category", "productType", "minBudget", "maxBudget", "preferredBrands",
-                    "colors", "useCases", "priorities", "keywords", "shoppingStyle")
+                    "colors", "useCases", "priorities", "keywords", "shoppingStyle", "qualityPreference")
             .build();
 
     private final GeminiConfig config;
@@ -125,7 +126,11 @@ public final class GeminiShoppingIntentProvider implements ShoppingIntentProvide
         return "Extract shopping intent from the user's raw query. Return only the requested JSON object. "
                 + "Do not invent requirements. The current query always overrides saved preferences. "
                 + "Use null for unknown scalar values and empty arrays when there is no evidence. "
-                + "Normalize category to one of Fashion, Footwear, Electronics, Beauty, Accessories, Home, Sports.\n"
+                + "Normalize category to one of Fashion, Footwear, Electronics, Beauty, Accessories, Home, Sports. "
+                + "Convert phrases like 'my skin is dry' or 'for oily skin' into a concise useCases value. "
+                + "Convert 'good brands', 'reputable brands', or 'known brands' into qualityPreference='reputable-brands' "
+                + "and do not name brands unless the user names them. Convert 'best' or 'recommended' into a ranking priority. "
+                + "Interpret k as thousand in budgets, such as 1k = 1000.\n"
                 + preferences + "\nUser query: " + request.rawQuery();
     }
 

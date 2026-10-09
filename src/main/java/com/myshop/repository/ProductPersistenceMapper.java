@@ -31,20 +31,21 @@ final class ProductPersistenceMapper {
         statement.setString(start + 11, product.artworkClass());
         statement.setString(start + 12, product.imageUrl());
         statement.setString(start + 13, product.description());
+        statement.setString(start + 14, product.externalUrl());
         ProductOffer offer = product.offers().stream().findFirst().orElse(null);
         if (offer == null) {
-            for (int offset = 14; offset <= 21; offset++) {
+            for (int offset = 15; offset <= 22; offset++) {
                 statement.setObject(start + offset, null);
             }
         } else {
-            statement.setString(start + 14, offer.productId());
-            statement.setString(start + 15, offer.storeName());
-            statement.setBigDecimal(start + 16, offer.price());
-            statement.setBigDecimal(start + 17, offer.originalPrice());
-            statement.setString(start + 18, offer.currency());
-            statement.setString(start + 19, offer.productUrl());
-            statement.setString(start + 20, offer.availability().name());
-            statement.setString(start + 21, offer.delivery());
+            statement.setString(start + 15, offer.productId());
+            statement.setString(start + 16, offer.storeName());
+            statement.setBigDecimal(start + 17, offer.price());
+            statement.setBigDecimal(start + 18, offer.originalPrice());
+            statement.setString(start + 19, offer.currency());
+            statement.setString(start + 20, offer.productUrl());
+            statement.setString(start + 21, offer.availability().name());
+            statement.setString(start + 22, offer.delivery());
         }
     }
 
@@ -57,7 +58,7 @@ final class ProductPersistenceMapper {
                 resultSet.getString("discount"), resultSet.getDouble("rating"), resultSet.getInt("review_count"),
                 resultSet.getString("store"), artwork, resultSet.getString("artwork_class"),
                 resultSet.getString("image_url"), resultSet.getString("description"), true,
-                offer == null ? List.of() : List.of(offer)
+                offer == null ? List.of() : List.of(offer), resultSet.getString("external_url")
         );
     }
 

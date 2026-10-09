@@ -40,6 +40,27 @@ class PersistenceServicesTest {
         assertTrue(service.recentSearches(user.id()).isEmpty()); assertTrue(service.recentlyViewed(user.id()).isEmpty());
     }
 
+    @Test
+    void savedAndViewedProductsPreserveLinkOnlyExternalUrl() throws Exception {
+        DatabaseManager database = new DatabaseManager(Files.createTempFile("myshop-links", ".db"));
+        database.initialize();
+        User user = user(database, "links@example.com");
+        Product product = new Product(
+                "link-product", "Brand", "Product", "Beauty", "₹999", null, null,
+                4.5, 10, "Store", IconType.BAG, "artwork-sand", null, "Description", false,
+                List.of(), "https://store.example/product"
+        );
+
+        new SavedProductService(new SqliteSavedProductRepository(database)).save(user.id(), product);
+        HistoryService history = new HistoryService(new SqliteHistoryRepository(database));
+        history.recordViewedProduct(user.id(), product);
+
+        assertEquals("https://store.example/product",
+                new SqliteSavedProductRepository(database).findAll(user.id()).getFirst().externalUrl());
+        assertEquals("https://store.example/product",
+                history.recentlyViewed(user.id()).getFirst().externalUrl());
+    }
+
     private User user(DatabaseManager database, String email) {
         return new SqliteUserRepository(database).save(new User(0, email, email, "hash", Instant.now()));
     }

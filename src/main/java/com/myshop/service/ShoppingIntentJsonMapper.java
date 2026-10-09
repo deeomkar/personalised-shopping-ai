@@ -32,7 +32,8 @@ public final class ShoppingIntentJsonMapper {
                     safe(payload.useCases),
                     safe(payload.priorities),
                     safe(payload.keywords),
-                    payload.shoppingStyle
+                    payload.shoppingStyle,
+                    payload.qualityPreference
             );
         } catch (Exception exception) {
             throw new IllegalArgumentException("Gemini returned malformed shopping intent JSON", exception);
@@ -54,5 +55,6 @@ public final class ShoppingIntentJsonMapper {
         public List<String> priorities;
         public List<String> keywords;
         public String shoppingStyle;
+        public String qualityPreference;
     }
 }

@@ -38,7 +38,7 @@ public final class DatabaseManager {
                 product_id TEXT NOT NULL,
                 brand TEXT, name TEXT NOT NULL, category TEXT, price TEXT, original_price TEXT, discount TEXT,
                 rating REAL NOT NULL DEFAULT 0, review_count INTEGER NOT NULL DEFAULT 0, store TEXT,
-                artwork TEXT, artwork_class TEXT, image_url TEXT, description TEXT,
+                artwork TEXT, artwork_class TEXT, image_url TEXT, description TEXT, external_url TEXT,
                 offer_product_id TEXT, offer_store_name TEXT, offer_price NUMERIC,
                 offer_original_price NUMERIC, offer_currency TEXT, offer_url TEXT,
                 offer_availability TEXT, offer_delivery TEXT, saved_at TEXT NOT NULL,
@@ -61,7 +61,7 @@ public final class DatabaseManager {
                 product_id TEXT NOT NULL,
                 brand TEXT, name TEXT NOT NULL, category TEXT, price TEXT, original_price TEXT, discount TEXT,
                 rating REAL NOT NULL DEFAULT 0, review_count INTEGER NOT NULL DEFAULT 0, store TEXT,
-                artwork TEXT, artwork_class TEXT, image_url TEXT, description TEXT,
+                artwork TEXT, artwork_class TEXT, image_url TEXT, description TEXT, external_url TEXT,
                 offer_product_id TEXT, offer_store_name TEXT, offer_price NUMERIC,
                 offer_original_price NUMERIC, offer_currency TEXT, offer_url TEXT,
                 offer_availability TEXT, offer_delivery TEXT, viewed_at TEXT NOT NULL,
@@ -87,8 +87,20 @@ public final class DatabaseManager {
             statement.executeUpdate(SAVED_PRODUCTS_SCHEMA);
             statement.executeUpdate(SEARCH_HISTORY_SCHEMA);
             statement.executeUpdate(VIEWED_PRODUCTS_SCHEMA);
+            ensureColumn(statement, "saved_products", "external_url");
+            ensureColumn(statement, "viewed_products", "external_url");
         } catch (SQLException exception) {
             throw new DatabaseException("Unable to initialize the MyShop database.", exception);
+        }
+    }
+
+    private void ensureColumn(Statement statement, String table, String column) throws SQLException {
+        try {
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " TEXT");
+        } catch (SQLException exception) {
+            if (!exception.getMessage().toLowerCase().contains("duplicate column name")) {
+                throw exception;
+            }
         }
     }
 

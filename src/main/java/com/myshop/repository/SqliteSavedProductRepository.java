@@ -22,15 +22,17 @@ public final class SqliteSavedProductRepository implements SavedProductRepositor
                 INSERT INTO saved_products (
                     user_id, product_id, brand, name, category, price, original_price, discount,
                     rating, review_count, store, artwork, artwork_class, image_url, description,
+                    external_url,
                     offer_product_id, offer_store_name, offer_price, offer_original_price, offer_currency,
                     offer_url, offer_availability, offer_delivery, saved_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(user_id, product_id) DO UPDATE SET
                     brand=excluded.brand, name=excluded.name, category=excluded.category,
                     price=excluded.price, original_price=excluded.original_price, discount=excluded.discount,
                     rating=excluded.rating, review_count=excluded.review_count, store=excluded.store,
                     artwork=excluded.artwork, artwork_class=excluded.artwork_class, image_url=excluded.image_url,
-                    description=excluded.description, offer_product_id=excluded.offer_product_id,
+                    description=excluded.description, external_url=excluded.external_url,
+                    offer_product_id=excluded.offer_product_id,
                     offer_store_name=excluded.offer_store_name, offer_price=excluded.offer_price,
                     offer_original_price=excluded.offer_original_price, offer_currency=excluded.offer_currency,
                     offer_url=excluded.offer_url, offer_availability=excluded.offer_availability,
@@ -39,7 +41,7 @@ public final class SqliteSavedProductRepository implements SavedProductRepositor
         try (Connection connection = database.openConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, userId);
             ProductPersistenceMapper.bindProduct(statement, 2, product);
-            statement.setString(24, java.time.Instant.now().toString());
+            statement.setString(25, java.time.Instant.now().toString());
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new DatabaseException("Unable to save the product.", exception);

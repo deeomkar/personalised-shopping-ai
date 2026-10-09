@@ -4,6 +4,7 @@ import javafx.scene.control.TextField;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 
 public final class SearchField extends HBox {
 
@@ -16,11 +17,19 @@ public final class SearchField extends HBox {
         input = new TextField();
         input.setPromptText(prompt);
         input.setAccessibleText(prompt);
+        input.setEditable(true);
+        input.setDisable(false);
         input.setFocusTraversable(true);
+        input.setMaxWidth(Double.MAX_VALUE);
         input.getStyleClass().add("search-input");
 
+        icon.setMouseTransparent(true);
         getChildren().addAll(icon, input);
+        HBox.setHgrow(input, Priority.ALWAYS);
         setSpacing(10);
+        setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        setPickOnBounds(true);
+        setOnMousePressed(event -> input.requestFocus());
         getStyleClass().add("search-field");
     }
 

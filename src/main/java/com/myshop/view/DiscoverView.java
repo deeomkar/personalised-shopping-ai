@@ -18,10 +18,14 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.util.Objects;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 public final class DiscoverView extends ScrollPane {
@@ -92,7 +96,7 @@ public final class DiscoverView extends ScrollPane {
         Button searchButton = new Button("Search");
         searchButton.setMnemonicParsing(false);
         searchButton.setAccessibleText("Search products");
-        searchButton.getStyleClass().add("primary-button");
+        searchButton.getStyleClass().addAll("primary-button", "search-submit");
         Runnable submitSearch = () -> {
             String query = searchField.input().getText().trim();
             if (query.isBlank()) {
@@ -137,7 +141,7 @@ public final class DiscoverView extends ScrollPane {
         productGrid.setHgap(18);
         productGrid.setVgap(18);
         productGrid.setAlignment(Pos.TOP_LEFT);
-        for (Product product : MockCatalogService.pickedProducts()) {
+        for (Product product : pickedForYou()) {
             boolean saved = savedProductService != null && savedProductService.isSaved(userId, product.id());
             Product displayProduct = saved == product.saved() ? product : copyWithSaved(product, saved);
             productGrid.getChildren().add(new ProductCard(displayProduct, onProductSelected,
@@ -145,7 +149,7 @@ public final class DiscoverView extends ScrollPane {
         }
 
         VBox section = new VBox(
-                new SectionHeading("Picked for you", "A few places to start, based on the kinds of things people keep close."),
+                new SectionHeading("Picked for you", "Your saved and recently viewed products will appear here."),
                 productGrid
         );
         section.setSpacing(18);
@@ -153,11 +157,43 @@ public final class DiscoverView extends ScrollPane {
         return section;
     }
 
+    private List<Product> pickedForYou() {
+        Map<String, Product> localProducts = new LinkedHashMap<>();
+        if (historyService != null) {
+            historyService.recentlyViewed(userId).stream()
+                    .filter(this::isIndiaSafeProduct)
+                    .forEach(product -> localProducts.putIfAbsent(product.id(), product));
+        }
+        if (savedProductService != null) {
+            savedProductService.list(userId).stream()
+                    .filter(this::isIndiaSafeProduct)
+                    .forEach(product -> localProducts.putIfAbsent(product.id(), product));
+        }
+        if (!localProducts.isEmpty()) {
+            return localProducts.values().stream().limit(4).toList();
+        }
+        return MockCatalogService.discoveryPlaceholders();
+    }
+
+    private boolean isIndiaSafeProduct(Product product) {
+        String price = product.price();
+        if (price != null && !price.isBlank()
+                && !price.contains("₹")
+                && !price.toUpperCase(Locale.ROOT).contains("INR")) {
+            return false;
+        }
+        return product.offers().isEmpty() || product.offers().stream()
+                .anyMatch(offer -> "INR".equalsIgnoreCase(offer.currency()));
+    }
+
     private VBox createRecentlyViewedSection() {
         HBox recentRow = new HBox();
         recentRow.setSpacing(14);
+        recentRow.setMinHeight(Region.USE_PREF_SIZE);
         List<Product> recentlyViewed = historyService == null ? MockCatalogService.recentlyViewed()
-                : historyService.recentlyViewed(userId);
+                : historyService.recentlyViewed(userId).stream()
+                .filter(this::isIndiaSafeProduct)
+                .toList();
         for (Product product : recentlyViewed) {
             recentRow.getChildren().add(new CompactProductCard(product, onProductSelected));
         }
@@ -167,7 +203,7 @@ public final class DiscoverView extends ScrollPane {
         recentScroll.setFitToWidth(false);
         recentScroll.setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
         recentScroll.setVbarPolicy(ScrollBarPolicy.NEVER);
-        recentScroll.setPrefViewportHeight(98);
+        recentScroll.setPrefViewportHeight(Region.USE_COMPUTED_SIZE);
         recentScroll.getStyleClass().add("recent-scroll");
 
         VBox section = new VBox(new SectionHeading("Recently viewed"), recentScroll);
@@ -179,7 +215,8 @@ public final class DiscoverView extends ScrollPane {
     private Product copyWithSaved(Product product, boolean saved) {
         return new Product(product.id(), product.brand(), product.name(), product.category(), product.price(),
                 product.originalPrice(), product.discount(), product.rating(), product.reviewCount(), product.store(),
-                product.artwork(), product.artworkClass(), product.imageUrl(), product.description(), saved, product.offers());
+                product.artwork(), product.artworkClass(), product.imageUrl(), product.description(), saved,
+                product.offers(), product.externalUrl());
     }
 
     private void updateWrapLengths(double width) {
