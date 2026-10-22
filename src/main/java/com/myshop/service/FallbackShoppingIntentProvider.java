@@ -4,6 +4,7 @@ import com.myshop.model.SearchRequest;
 import com.myshop.model.ShoppingIntent;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +28,18 @@ public final class FallbackShoppingIntentProvider implements ShoppingIntentProvi
     );
     private static final List<String> BRANDS = List.of(
             "Veja", "Marshall", "Uniqlo", "Seiko", "Aesop", "On Running", "Nike", "Adidas"
+    );
+    private static final Pattern PRODUCT_TYPE_BOUNDARY = Pattern.compile(
+            "(?i)\\b(?:for|with|under|below|over|above|within|between|from|in)\\b"
+    );
+    private static final Pattern PRODUCT_REQUEST_MARKER = Pattern.compile(
+            "(?i)\\b(?:need|want|looking for|find|show)\\b"
+    );
+    private static final Set<String> PRODUCT_TYPE_NOISE = Set.of(
+            "a", "an", "and", "best", "find", "good", "i", "me", "my", "need", "of", "please",
+            "show", "the", "to", "want", "looking", "price", "budget", "under", "below", "less",
+            "than", "upto", "up", "rs", "inr", "comfortable", "minimal", "premium", "quality",
+            "makeup"
     );
 
     @Override
@@ -65,12 +78,14 @@ public final class FallbackShoppingIntentProvider implements ShoppingIntentProvi
     }
 
     private String productType(String query) {
-        for (String type : List.of("sneakers", "sneaker", "headphones", "headphone", "earbuds", "earbud",
-                "foundation", "moisturizer", "moisturiser", "cleanser", "sunscreen", "serum", "shirt",
-                "jacket", "watch", "bag")) {
-            if (query.contains(type)) return "moisturiser".equals(type) ? "moisturizer" : type;
+        List<String> candidate = productTypeTokens(query);
+        if (candidate.isEmpty()) {
+            return null;
         }
-        return null;
+        return candidate.stream()
+                .map(value -> "moisturiser".equals(value) ? "moisturizer" : value)
+                .reduce((left, right) -> left + " " + right)
+                .orElse(null);
     }
 
     private Double budget(Pattern pattern, String query) {
@@ -99,6 +114,7 @@ public final class FallbackShoppingIntentProvider implements ShoppingIntentProvi
         Set<String> values = new LinkedHashSet<>();
         String type = productType(query);
         if (type != null) values.add(type);
+        values.addAll(productTypeTokens(query));
         if (query.contains("makeup")) values.add("makeup");
         values.addAll(useCases(query));
         values.addAll(matchingLabels(COLORS, query));
@@ -107,6 +123,18 @@ public final class FallbackShoppingIntentProvider implements ShoppingIntentProvi
             values.addAll(conciseTokens(query));
         }
         return new ArrayList<>(values);
+    }
+
+    private List<String> productTypeTokens(String query) {
+        String candidate = PRODUCT_TYPE_BOUNDARY.split(query, 2)[0];
+        String[] requestParts = PRODUCT_REQUEST_MARKER.split(candidate);
+        candidate = requestParts[requestParts.length - 1];
+        return Arrays.stream(candidate.replaceAll("[^a-z0-9 ]", " ").split("\\s+"))
+                .map(String::trim)
+                .filter(token -> !token.isBlank())
+                .filter(token -> !PRODUCT_TYPE_NOISE.contains(token))
+                .filter(token -> !COLORS.contains(token))
+                .toList();
     }
 
     private List<String> useCases(String query) {

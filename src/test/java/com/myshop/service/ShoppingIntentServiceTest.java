@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -81,6 +82,22 @@ class ShoppingIntentServiceTest {
         assertEquals("Beauty", intent.category());
         assertEquals("foundation", intent.productType());
         assertTrue(intent.keywords().contains("makeup"));
+    }
+
+    @Test
+    void fallbackExtractsArbitraryProductTypesWithoutTypeBranches() {
+        Map<String, String> queries = Map.of(
+                "lipstick under 1000", "lipstick",
+                "gaming laptop under 70000", "gaming laptop",
+                "wireless mouse under 2000", "wireless mouse",
+                "shampoo for dry hair under 1000", "shampoo",
+                "black handbag under 3000", "handbag",
+                "power bank under 2000", "power bank"
+        );
+
+        FallbackShoppingIntentProvider provider = new FallbackShoppingIntentProvider();
+        queries.forEach((query, expectedType) -> assertEquals(expectedType,
+                provider.understand(request(query)).productType(), query));
     }
 
     @Test
